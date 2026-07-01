@@ -87,7 +87,7 @@ async def generate_video(
 
     print(f"Gerando cena: {scene_desc}")
     pipe = FluxPipeline.from_pretrained(
-        "black-forest-labs/FLUX.1-dev",
+        "stabilityai/stable-diffusion-2-1",
         torch_dtype=torch.bfloat16
     ).to("cuda")
     scene_image = pipe(
