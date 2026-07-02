@@ -144,14 +144,33 @@ def run_omniavatar(avatar_path: str, audio_path: str, prompt: str, job_id: str) 
         env={**os.environ, "OUTPUT_DIR": output_dir}
     )
 
+    print(f"[omniavatar] returncode: {result.returncode}")
+    print(f"[omniavatar] stdout[-500]: {result.stdout[-500:]}")
     if result.returncode != 0:
         print(f"[omniavatar] stderr: {result.stderr[-800:]}")
         raise RuntimeError(f"OmniAvatar falhou: {result.stderr[-200:]}")
 
-    # Encontra o vídeo gerado (OmniAvatar salva com nome baseado no job)
-    mp4_files = list(Path(output_dir).glob("*.mp4"))
+    # OmniAvatar pode salvar em varios lugares — busca recursivamente
+    search_dirs = [
+        output_dir,
+        f"{OMNIAVATAR_REPO}/outputs",
+        f"{OMNIAVATAR_REPO}/results",
+        "/workspace/outputs",
+    ]
+    mp4_files = []
+    for d in search_dirs:
+        if os.path.exists(d):
+            found = list(Path(d).glob("**/*.mp4"))
+            print(f"[omniavatar] buscando em {d}: {len(found)} mp4s encontrados")
+            mp4_files.extend(found)
+
     if not mp4_files:
-        raise RuntimeError("OmniAvatar não gerou nenhum vídeo")
+        find_result = subprocess.run(
+            ["find", OMNIAVATAR_REPO, "-name", "*.mp4"],
+            capture_output=True, text=True
+        )
+        print(f"[omniavatar] find *.mp4: {find_result.stdout[:500]}")
+        raise RuntimeError("OmniAvatar nao gerou nenhum video")
 
     raw_video = str(mp4_files[0])
 
