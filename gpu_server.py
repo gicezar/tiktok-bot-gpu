@@ -54,6 +54,10 @@ def setup_omniavatar():
             sys.executable, "-m", "pip", "install", "-q",
             "-r", f"{OMNIAVATAR_REPO}/requirements.txt"
         ], check=True)
+        # Instala o pacote OmniAvatar em modo editable
+        subprocess.run([
+            sys.executable, "-m", "pip", "install", "-q", "-e", OMNIAVATAR_REPO
+        ], check=True)
         print("[setup] OmniAvatar instalado!")
 
     # 3b. Baixa modelos (só na primeira vez)
@@ -85,6 +89,12 @@ def setup_omniavatar():
         if not os.path.exists(link) and os.path.exists(src):
             os.symlink(src, link)
 
+    # Garante que o pacote OmniAvatar está instalado (roda sempre)
+    print("[setup] Registrando pacote OmniAvatar...")
+    subprocess.run([
+        sys.executable, "-m", "pip", "install", "-q", "-e", OMNIAVATAR_REPO
+    ], check=True)
+
     print("[setup] OmniAvatar pronto!")
 
 # ── 4. Gera vídeo com OmniAvatar ──────────────────────────────────────────────
@@ -108,9 +118,13 @@ def run_omniavatar(avatar_path: str, audio_path: str, prompt: str, job_id: str) 
     ]
 
     result = subprocess.run(
-        cmd, capture_output=False, text=True, cwd=OMNIAVATAR_REPO,
-        env={**os.environ, "OUTPUT_DIR": output_dir}
+        cmd, capture_output=True, text=True, cwd=OMNIAVATAR_REPO,
+        env={**os.environ, "OUTPUT_DIR": output_dir,
+             "TORCH_DISTRIBUTED_DEBUG": "DETAIL"}
     )
+
+    print(f"[omniavatar] STDOUT:\n{result.stdout[-2000:]}")
+    print(f"[omniavatar] STDERR:\n{result.stderr[-2000:]}")
 
     if result.returncode != 0:
         raise RuntimeError(f"OmniAvatar falhou com código {result.returncode}")
