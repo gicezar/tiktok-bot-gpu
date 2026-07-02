@@ -89,11 +89,10 @@ def setup_omniavatar():
         if not os.path.exists(link) and os.path.exists(src):
             os.symlink(src, link)
 
-    # Garante que o pacote OmniAvatar está instalado (roda sempre)
-    print("[setup] Registrando pacote OmniAvatar...")
-    subprocess.run([
-        sys.executable, "-m", "pip", "install", "-q", "-e", OMNIAVATAR_REPO
-    ], check=True)
+    # Adiciona o repo ao Python path para que "from OmniAvatar.x import y" funcione
+    if OMNIAVATAR_REPO not in sys.path:
+        sys.path.insert(0, OMNIAVATAR_REPO)
+    print(f"[setup] OmniAvatar no sys.path: {OMNIAVATAR_REPO}")
 
     print("[setup] OmniAvatar pronto!")
 
@@ -116,10 +115,13 @@ def run_omniavatar(avatar_path: str, audio_path: str, prompt: str, job_id: str) 
         "tea_cache_l1_thresh=0.14",
     ]
 
+    env = {
+        **os.environ,
+        "OUTPUT_DIR": output_dir,
+        "PYTHONPATH": OMNIAVATAR_REPO + ":" + os.environ.get("PYTHONPATH", ""),
+    }
     result = subprocess.run(
-        cmd, capture_output=True, text=True, cwd=OMNIAVATAR_REPO,
-        env={**os.environ, "OUTPUT_DIR": output_dir,
-             "TORCH_DISTRIBUTED_DEBUG": "DETAIL"}
+        cmd, capture_output=True, text=True, cwd=OMNIAVATAR_REPO, env=env
     )
 
     print(f"[omniavatar] STDOUT:\n{result.stdout[-2000:]}")
