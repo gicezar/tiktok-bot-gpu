@@ -19,6 +19,17 @@ Custo por vídeo de 30s na RTX A4000 (~$0.17/hr):
 """
 
 import os, uuid, shutil, subprocess, sys, tempfile
+
+# Instala ffmpeg automaticamente se não estiver disponível
+def ensure_ffmpeg():
+    if shutil.which("ffmpeg"):
+        return
+    print("[setup] ffmpeg não encontrado, instalando...")
+    subprocess.run(["apt-get", "update", "-q"], check=True, capture_output=True)
+    subprocess.run(["apt-get", "install", "-y", "ffmpeg"], check=True, capture_output=True)
+    print("[setup] ffmpeg instalado!")
+
+ensure_ffmpeg()
 import soundfile as sf
 from pathlib import Path
 from contextlib import asynccontextmanager
