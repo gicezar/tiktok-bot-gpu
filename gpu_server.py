@@ -113,7 +113,6 @@ def run_omniavatar(avatar_path: str, audio_path: str, prompt: str, job_id: str) 
         "--config", f"{OMNIAVATAR_REPO}/configs/inference_1.3B.yaml",
         "--input_file", input_file,
         "--hp=num_steps=20,guidance_scale=4.5,audio_scale=3,"
-        "num_persistent_param_in_dit=0,"
         "tea_cache_l1_thresh=0.14",
     ]
 
