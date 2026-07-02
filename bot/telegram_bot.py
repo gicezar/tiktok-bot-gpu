@@ -10,7 +10,7 @@ from config.settings import TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USER_ID, ANTHRO
 from pipeline.orchestrator import Orchestrator, VideoJob, JobStatus
 from pipeline.scraper import is_tiktok_url
 
-GPU_SERVER_URL = os.getenv("GPU_SERVER_URL", "https://hm1fg6pvxbrari-8000.proxy.runpod.net")
+GPU_SERVER_URL = os.getenv("GPU_SERVER_URL", "https://evs5lzl36qe3ph-8000.proxy.runpod.net")
 orchestrator = Orchestrator(api_key=ANTHROPIC_API_KEY, gpu_url=GPU_SERVER_URL)
 
 def only_allowed(func):
@@ -29,7 +29,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📎 Manda o *link do produto* do TikTok Shop\n\n"
         "📸 Manda a *foto do produto* com o título na legenda\n\n"
         "📝 Manda só o *nome do produto* em texto\n\n"
-        "Vou gerar o roteiro e o áudio! 🎬",
+        "Vou gerar o vídeo completo! 🎬",
         parse_mode=ParseMode.MARKDOWN
     )
 
@@ -70,28 +70,49 @@ async def _start_job(update: Update, input_text: str, image_bytes, status_msg):
     asyncio.create_task(_wait_and_deliver(update, job, status_msg))
 
 async def _wait_and_deliver(update: Update, job: VideoJob, status_msg):
+    # Aguarda até 20 minutos (240 x 5s) — OmniAvatar pode levar ~8 min
     for _ in range(240):
         await asyncio.sleep(5)
+
         if job.status == JobStatus.DONE:
-            caption = f"✅ *Pronto!*\n📦 {job.product.title if job.product else ''}"
+            caption = f"✅ *Vídeo pronto!*\n📦 {job.product.title if job.product else ''}"
             if job.script:
-                caption += f"\n\n📋 *Roteiro:*\n_{job.script.narration}_"
-                caption += f"\n\n👕 Roupa: {job.script.outfit_description}"
-                caption += f"\n🎬 Cenário: {job.script.scene_description}"
-            if job.audio_path and os.path.exists(job.audio_path):
-                with open(job.audio_path, "rb") as f:
-                    await update.message.reply_audio(
-                        audio=f,
+                caption += f"\n\n📋 _{job.script.narration[:300]}_"
+
+            # Entrega o VÍDEO se foi gerado
+            if job.video_final_path and os.path.exists(job.video_final_path):
+                with open(job.video_final_path, "rb") as f:
+                    await update.message.reply_video(
+                        video=f,
                         caption=caption,
                         parse_mode=ParseMode.MARKDOWN,
+                        supports_streaming=True,
                     )
+                # Limpa o arquivo após enviar
+                try:
+                    os.unlink(job.video_final_path)
+                except Exception:
+                    pass
+
+            # Fallback: entrega só o áudio se vídeo não existir
+            elif job.audio_path and os.path.exists(job.audio_path):
+                await update.message.reply_audio(
+                    audio=open(job.audio_path, "rb"),
+                    caption=caption + "\n\n⚠️ _Vídeo não gerado, enviando áudio._",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
             else:
                 await update.message.reply_text(caption, parse_mode=ParseMode.MARKDOWN)
             return
+
         if job.status == JobStatus.FAILED:
-            await update.message.reply_text(f"❌ Erro: `{job.error}`", parse_mode=ParseMode.MARKDOWN)
+            await update.message.reply_text(
+                f"❌ Erro: `{job.error}`",
+                parse_mode=ParseMode.MARKDOWN
+            )
             return
-    await update.message.reply_text("⏱️ Timeout — tente novamente.")
+
+    await update.message.reply_text("⏱️ Timeout — o vídeo demorou mais que 20 min. Tente novamente.")
 
 def run_bot():
     if not TELEGRAM_BOT_TOKEN:
