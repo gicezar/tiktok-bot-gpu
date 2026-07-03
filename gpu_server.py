@@ -1,5 +1,5 @@
 """
-gpu_server.py v5.2
+gpu_server.py v5.3
 Stack: VoxCPM2 (voz) + OmniAvatar 1.3B (video animado com lip sync)
 """
 import os, sys, uuid, shutil, subprocess, tempfile
@@ -16,17 +16,14 @@ def ensure_ffmpeg():
 
 ensure_ffmpeg()
 
-DEPS = [
-    "huggingface_hub", "imageio", "imageio-ffmpeg",
-    "opencv-python-headless", "einops", "omegaconf",
-    "transformers", "accelerate", "peft", "librosa"
-]
-
+# Instala APENAS o que falta — sem tocar em torch/torchvision
+DEPS = ["huggingface_hub", "imageio", "imageio-ffmpeg",
+        "opencv-python-headless", "einops", "omegaconf", "peft", "librosa"]
 subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
 subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q"] + DEPS, check=True)
-subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q", "--index-url", "https://download.pytorch.org/whl/cu124", "torchvision==0.19.1"], check=True)
 
 import soundfile as sf
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.responses import FileResponse
@@ -93,11 +90,8 @@ def run_omniavatar(avatar_path, audio_path, prompt, job_id):
         **os.environ,
         "OUTPUT_DIR": output_dir,
         "PYTHONPATH": OMNIAVATAR_REPO + ":" + os.environ.get("PYTHONPATH", ""),
-        "RANK": "0",
-        "LOCAL_RANK": "0",
-        "WORLD_SIZE": "1",
-        "MASTER_ADDR": "localhost",
-        "MASTER_PORT": "29500",
+        "RANK": "0", "LOCAL_RANK": "0", "WORLD_SIZE": "1",
+        "MASTER_ADDR": "localhost", "MASTER_PORT": "29500",
     }
 
     cmd = [
@@ -149,7 +143,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "5.2",
+    return {"status": "ok", "version": "5.3",
             "voxcpm2": model_vox is not None,
             "omniavatar": os.path.exists(f"{MODELS_DIR}/OmniAvatar-1.3B"),
             "voice_ref": os.path.exists(VOICE_REF)}
