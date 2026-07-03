@@ -24,6 +24,7 @@ DEPS = [
 
 subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
 subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q"] + DEPS, check=True)
+subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q", "--index-url", "https://download.pytorch.org/whl/cu124", "torchvision==0.19.1"], check=True)
 
 import soundfile as sf
 from contextlib import asynccontextmanager
