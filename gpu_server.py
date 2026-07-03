@@ -1,5 +1,5 @@
 """
-gpu_server.py v5.1
+gpu_server.py v5.2
 Stack: VoxCPM2 (voz) + OmniAvatar 1.3B (video animado com lip sync)
 """
 import os, sys, uuid, shutil, subprocess, tempfile
@@ -92,19 +92,23 @@ def run_omniavatar(avatar_path, audio_path, prompt, job_id):
         **os.environ,
         "OUTPUT_DIR": output_dir,
         "PYTHONPATH": OMNIAVATAR_REPO + ":" + os.environ.get("PYTHONPATH", ""),
+        "RANK": "0",
+        "LOCAL_RANK": "0",
+        "WORLD_SIZE": "1",
+        "MASTER_ADDR": "localhost",
+        "MASTER_PORT": "29500",
     }
 
     cmd = [
-        "torchrun", "--standalone", "--nproc_per_node=1",
-        f"{OMNIAVATAR_REPO}/scripts/inference.py",
+        "/usr/bin/python", f"{OMNIAVATAR_REPO}/scripts/inference.py",
         "--config", f"{OMNIAVATAR_REPO}/configs/inference_1.3B.yaml",
         "--input_file", input_file,
         "--hp=num_steps=20,guidance_scale=4.5,audio_scale=3,tea_cache_l1_thresh=0.14",
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=OMNIAVATAR_REPO, env=env)
-    print(f"[omniavatar] stdout:\n{result.stdout[-2000:]}")
-    print(f"[omniavatar] stderr:\n{result.stderr[-2000:]}")
+    print(f"[omniavatar] stdout:\n{result.stdout[-3000:]}")
+    print(f"[omniavatar] stderr:\n{result.stderr[-3000:]}")
 
     if result.returncode != 0:
         raise RuntimeError(f"OmniAvatar falhou com código {result.returncode}")
@@ -144,7 +148,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "5.1",
+    return {"status": "ok", "version": "5.2",
             "voxcpm2": model_vox is not None,
             "omniavatar": os.path.exists(f"{MODELS_DIR}/OmniAvatar-1.3B"),
             "voice_ref": os.path.exists(VOICE_REF)}
