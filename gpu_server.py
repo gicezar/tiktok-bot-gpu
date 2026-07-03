@@ -19,7 +19,7 @@ ensure_ffmpeg()
 DEPS = [
     "huggingface_hub", "imageio", "imageio-ffmpeg",
     "opencv-python-headless", "einops", "omegaconf",
-    "transformers", "accelerate", "peft", "librosa"
+    "transformers", "accelerate", "peft", "librosa", "torchvision==0.20.0"
 ]
 
 subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
