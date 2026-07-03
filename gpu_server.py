@@ -1,5 +1,5 @@
 """
-gpu_server.py v5.0
+gpu_server.py v5.1
 Stack: VoxCPM2 (voz) + OmniAvatar 1.3B (video animado com lip sync)
 """
 import os, sys, uuid, shutil, subprocess, tempfile
@@ -16,7 +16,14 @@ def ensure_ffmpeg():
 
 ensure_ffmpeg()
 
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "huggingface_hub"], check=True)
+DEPS = [
+    "huggingface_hub", "imageio", "imageio-ffmpeg",
+    "opencv-python-headless", "einops", "omegaconf",
+    "transformers", "accelerate"
+]
+
+subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
+subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q"] + DEPS, check=True)
 
 import soundfile as sf
 from contextlib import asynccontextmanager
@@ -41,6 +48,8 @@ def setup_omniavatar():
         subprocess.run(["git", "clone", "--depth=1",
             "https://github.com/Omni-Avatar/OmniAvatar", OMNIAVATAR_REPO], check=True)
         subprocess.run([sys.executable, "-m", "pip", "install", "-q",
+            "-r", f"{OMNIAVATAR_REPO}/requirements.txt"], check=True)
+        subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q",
             "-r", f"{OMNIAVATAR_REPO}/requirements.txt"], check=True)
 
     wan_path  = f"{MODELS_DIR}/Wan2.1-T2V-1.3B"
@@ -135,7 +144,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "5.0",
+    return {"status": "ok", "version": "5.1",
             "voxcpm2": model_vox is not None,
             "omniavatar": os.path.exists(f"{MODELS_DIR}/OmniAvatar-1.3B"),
             "voice_ref": os.path.exists(VOICE_REF)}
