@@ -16,8 +16,6 @@ def ensure_ffmpeg():
 
 ensure_ffmpeg()
 
-# Instala APENAS o que falta — sem tocar em torch/torchvision
-subprocess.run(["/usr/bin/python", "-m", "pip", "install", "-q", "--index-url", "https://download.pytorch.org/whl/cu124", "torchvision==0.19.1+cu124"], capture_output=True)
 DEPS = ["huggingface_hub", "imageio", "imageio-ffmpeg",
         "opencv-python-headless", "einops", "omegaconf", "peft", "librosa"]
 subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
