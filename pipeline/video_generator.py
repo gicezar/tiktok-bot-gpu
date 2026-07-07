@@ -13,7 +13,7 @@ async def upload_voice_reference(gpu_url: str, voice_path: str):
 
 async def generate_voice_clone(text: str, job_id: str, gpu_url: str) -> str:
     output_path = f"{OUTPUT_DIR}/{job_id}_audio.wav"
-    async with httpx.AsyncClient(timeout=180) as client:
+    async with httpx.AsyncClient(timeout=600) as client:
         response = await client.post(
             f"{gpu_url}/generate_voice_clone",
             data={"text": text}
