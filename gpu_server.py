@@ -19,7 +19,7 @@ ensure_ffmpeg()
 DEPS = ["huggingface_hub", "imageio", "imageio-ffmpeg",
         "opencv-python-headless", "einops", "omegaconf", "peft", "librosa"]
 subprocess.run([sys.executable, "-m", "pip", "install", "-q"] + DEPS, check=True)
-subprocess.run(["/workspace/omni_env/bin/python", "-m", "pip", "install", "-q"] + DEPS, check=True)
+subprocess.run(["/tmp/omni_env/bin/python", "-m", "pip", "install", "-q"] + DEPS, check=True)
 
 import soundfile as sf
 from pathlib import Path
@@ -46,7 +46,7 @@ def setup_omniavatar():
             "https://github.com/Omni-Avatar/OmniAvatar", OMNIAVATAR_REPO], check=True)
         subprocess.run([sys.executable, "-m", "pip", "install", "-q",
             "-r", f"{OMNIAVATAR_REPO}/requirements.txt"], check=True)
-        subprocess.run(["/workspace/omni_env/bin/python", "-m", "pip", "install", "-q",
+        subprocess.run(["/tmp/omni_env/bin/python", "-m", "pip", "install", "-q",
             "-r", f"{OMNIAVATAR_REPO}/requirements.txt"], check=True)
 
     wan_path  = f"{MODELS_DIR}/Wan2.1-T2V-1.3B"
@@ -94,7 +94,7 @@ def run_omniavatar(avatar_path, audio_path, prompt, job_id):
     }
 
     cmd = [
-        "/workspace/omni_env/bin/python", f"{OMNIAVATAR_REPO}/scripts/inference.py",
+        "/tmp/omni_env/bin/python", f"{OMNIAVATAR_REPO}/scripts/inference.py",
         "--config", f"{OMNIAVATAR_REPO}/configs/inference_1.3B.yaml",
         "--input_file", input_file,
         "--hp=num_steps=20,guidance_scale=4.5,audio_scale=3,tea_cache_l1_thresh=0.14",
